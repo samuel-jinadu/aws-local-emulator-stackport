@@ -8,23 +8,8 @@ A containerized local development environment that emulates AWS services using *
 |---------|---------|-------|------|
 | **FakeCloud** | Local AWS emulator (S3, SQS, SNS, DynamoDB, Lambda, etc.) | `ghcr.io/faiscadev/fakecloud:v0.51.0` | `4566` |
 | **Stackport** | Web dashboard for browsing/manager local AWS resources | `davireis/stackport:0.4.5` | `8080` |
-| **App** (Dev Container) | Ubuntu-based dev workspace with Docker-in-Docker | `mcr.microsoft.com/devcontainers/base:ubuntu` | — |
 
 ## 🚀 Quick Start
-
-### Option 1 — Dev Container (recommended)
-
-1. Install [Docker](https://docs.docker.com/get-docker/) and [VS Code](https://code.visualstudio.com/) with the **Dev Containers** extension.
-2. Open this repository in VS Code.
-3. Press `F1` → **Dev Containers: Reopen in Container**.
-4. VS Code will build and start `fakecloud` + `stackport`, then attach the workspace.
-
-Once the container is running:
-
-- FakeCloud endpoint → `http://localhost:4566`
-- Stackport dashboard → `http://localhost:8080`
-
-### Option 2 — Docker Compose (manual)
 
 ```bash
 git clone https://github.com/samuel-jinadu/aws-local-emulator-stackport.git
