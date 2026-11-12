@@ -1,6 +1,6 @@
 .venv
 push.sh
-proj.txt
+project_snapshot.txt
 .vscode
 pack.sh
 
