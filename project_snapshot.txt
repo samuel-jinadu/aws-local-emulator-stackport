@@ -1,0 +1,124 @@
+[DIR]  .
+--- ./.gitignore ---
+.venv
+push.sh
+proj.txt
+.vscode
+pack.sh
+
+fakecloud/**
+stackport/**
+!fakecloud/.gitkeep
+!stackport/.gitkeep[DIR]  ./fakecloud_data
+--- ./fakecloud_data/gitkeep ---
+--- ./compose.yaml ---
+services:
+  fakecloud:
+    image: ghcr.io/faiscadev/fakecloud:v0.51.0
+    container_name: fakecloud
+    ports:
+      - "4566:4566"
+    environment:
+      FAKECLOUD_STORAGE_MODE: "persistent"
+      FAKECLOUD_DATA_PATH: "/var/lib/fakecloud"
+      FAKECLOUD_ADDR: "0.0.0.0:4566"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./fakecloud_data:/var/lib/fakecloud
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "fakecloud", "healthcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          
+  stackport:
+    image: davireis/stackport:0.4.5
+    container_name: stackport
+    ports:
+      - "8080:8080"
+    environment:
+      - AWS_ENDPOINT_URL=http://fakecloud:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+    depends_on:
+      fakecloud:
+        condition: service_healthy
+    volumes:
+      - ./stackport_data:/root/.stackport 
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
+[DIR]  ./.devcontainer
+--- ./.devcontainer/devcontainer.json ---
+{
+  "name": "Project Dev (fakecloud + stackport)",
+  "dockerComposeFile": [
+    "../compose.yaml",
+    "docker-compose.dev.yml"
+  ],
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "latest"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+  "forwardPorts": [4566, 8080],
+  "portsAttributes": {
+    "4566": { "label": "fakecloud (AWS emulator)" },
+    "8080": { "label": "stackport dashboard" }
+  },
+  "postCreateCommand": "chmod +x ./reset.sh && ./reset.sh || true",
+  "remoteUser": "vscode"
+}--- ./.devcontainer/docker-compose.dev.yaml ---
+version: '3.8'
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    networks:
+      - default
+    depends_on:
+      fakecloud:
+        condition: service_healthy
+      stackport:
+        condition: service_started--- ./reset.sh ---
+#!/usr/bin/env bash
+set -euo pipefail
+
+docker compose down
+
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+for dir in fakecloud_data stackport_data; do
+    if [[ -d "$dir" ]]; then
+        echo "Cleaning $dir ..."
+        find "$dir" -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} +
+    else
+        echo "Skipping $dir (not found)"
+    fi
+done
+
+echo "Done."--- ./README.md ---
+[DIR]  ./stackport_data
+--- ./stackport_data/gitkeep ---
