@@ -1,6 +1,6 @@
 services:
   fakecloud:
-    image: ghcr.io/faiscadev/fakecloud:v0.51.0
+    image: ghcr.io/faiscadev/fakecloud:latest
     container_name: fakecloud
     ports:
       - "4566:4566"
@@ -25,7 +25,7 @@ services:
           memory: 1024M
           
   stackport:
-    image: davireis/stackport:0.4.5
+    image: davireis/stackport:latest
     container_name: stackport
     ports:
       - "8080:8080"
